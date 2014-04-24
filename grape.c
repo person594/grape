@@ -42,6 +42,7 @@ int matchFront(char *start, char *str, char *regex) {
 		return 0;
 	}
 	int hl = headLen(regex);
+	int altHl = hl+1;	//head length including suffix
 	int ml = 1;	//match length
 	char suffix = regex[hl];
 	int rest;
@@ -84,15 +85,13 @@ int matchFront(char *start, char *str, char *regex) {
 		regex[replacedPlus] = '+';
 	}
 	if (rest < 0) {
-		return rest;
+		goto noMatch;
 	}
 	return rest + ml;
 	
 	noMatch:
 	if (suffix == '*' || suffix == '?') {
-		ml = 0;
-		hl++;
-		goto recurse;
+		return matchFront(start, str, regex + altHl);
 	}
 	while (*regex) {
 		regex += headLen(regex);
@@ -101,7 +100,6 @@ int matchFront(char *start, char *str, char *regex) {
 		}
 	}
 	return -1;
-	
 }
 
 int match(char *str, char *regex) {
