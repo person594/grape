@@ -41,23 +41,39 @@ int matchFront(char *start, char *str, char *regex) {
 	if (*regex == 0 || *regex == '|') {
 		return 0;
 	}
+	char *end = str + strlen(str) - 1;
 	int hl = headLen(regex);
 	int altHl = hl+1;	//head length including suffix
 	int ml = 1;	//match length
 	char suffix = regex[hl];
 	int rest;
 	int replacedPlus = 0;
+	int sub = 0;
 	switch (*regex) {
 		case '(':
 			regex[hl-1] = 0;
-			ml = matchFront(str, str, regex+1);
+			while (str[sub]) {
+				char c = str[sub];
+				str[sub] = 0;
+				ml = matchFront(str, str, regex+1);
+				str[sub] = c;
+				if (ml >= 0) {
+					rest = matchFront(str, str + ml, regex + hl);
+					if (rest >= 0) {
+						regex[hl-1] = ')';
+						return ml + rest;
+					}
+				}
+				sub++;
+			}
 			regex[hl-1] = ')';
-			if (ml < 0) {
+			return -1;
+			//break;
+			
+		case '.':	//always match, except on end of string
+			if (*str == 0) {
 				goto noMatch;
 			}
-			break;
-			
-		case '.':	//always match
 			break;
 		
 		case '\\':
@@ -68,6 +84,7 @@ int matchFront(char *start, char *str, char *regex) {
 				goto noMatch;
 			}
 	}
+	
 	switch (suffix) {
 		case '?':
 			hl++;
@@ -79,7 +96,7 @@ int matchFront(char *start, char *str, char *regex) {
 		case '*':
 			hl = 0;
 	}
-	recurse:
+
 	rest = matchFront(start, str+ml, regex+hl);
 	if (replacedPlus) {
 		regex[replacedPlus] = '+';
@@ -88,6 +105,11 @@ int matchFront(char *start, char *str, char *regex) {
 		goto noMatch;
 	}
 	return rest + ml;
+	
+	restFail:
+	if (*regex == '(') {
+		
+	}
 	
 	noMatch:
 	if (suffix == '*' || suffix == '?') {
@@ -141,3 +163,4 @@ int main(int argc, char** argv) {
 		}
 	}
 }
+
