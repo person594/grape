@@ -37,6 +37,7 @@ inline int headLen(char *regex) {
 	}
 }
 
+
 int matchFront(char *start, char *str, char *regex) {
 	if (*regex == 0 || *regex == '|') {
 		return 0;
@@ -52,7 +53,7 @@ int matchFront(char *start, char *str, char *regex) {
 	switch (*regex) {
 		case '(':
 			regex[hl-1] = 0;
-			while (str[sub]) {
+			while (str[sub] || str[sub-1]) {
 				char c = str[sub];
 				str[sub] = 0;
 				ml = matchFront(str, str, regex+1);
@@ -78,6 +79,7 @@ int matchFront(char *start, char *str, char *regex) {
 		
 		case '\\':
 			regex++;	//fall through here.
+			hl--;
 			
 		default:
 			if (*str != *regex) {
