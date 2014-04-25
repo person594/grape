@@ -15,7 +15,11 @@ inline int headLen(char *regex) {
 		case '\\' : return 2;
 		case '[' :
 			r = regex+1;
+			if (*r == '^') {
+				r++;
+			}
 			while (*r && *++r != ']');
+			
 			if (*r == 0) {
 				errorString = "Unexpected token: [";
 				exit(1);
@@ -42,6 +46,9 @@ int matchFront(char *start, char *str, char *regex) {
 	if (*regex == 0 || *regex == '|') {
 		return 0;
 	}
+	if (*str == 0) {
+		return -1;
+	}
 	char *end = str + strlen(str) - 1;
 	int hl = headLen(regex);
 	int altHl = hl+1;	//head length including suffix
@@ -50,6 +57,7 @@ int matchFront(char *start, char *str, char *regex) {
 	int rest;
 	int replacedPlus = 0;
 	int sub = 0;
+	int i;
 	switch (*regex) {
 		case '(':
 			regex[hl-1] = 0;
@@ -69,7 +77,27 @@ int matchFront(char *start, char *str, char *regex) {
 			}
 			regex[hl-1] = ')';
 			return -1;
-			//break;
+		case '[':
+			i = 1;
+			if (regex[i] == '^') {
+				i++;
+				do {
+					if (regex[i] == *str) {
+						goto noMatch;
+					}
+					i++;
+				}	while (regex[i] != ']');
+				goto match;
+			} else {
+				do {
+					if (regex[i] == *str) {
+						goto match;
+					}
+					i++;
+				}	while (regex[i] != ']');
+				goto noMatch;
+			}
+			
 			
 		case '.':	//always match, except on end of string
 			if (*str == 0) {
@@ -86,6 +114,7 @@ int matchFront(char *start, char *str, char *regex) {
 				goto noMatch;
 			}
 	}
+	match:
 	
 	switch (suffix) {
 		case '?':
